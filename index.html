@@ -707,16 +707,6 @@ const SUPABASE_URL = 'https://wzpokkjoiukxygsedxbi.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_YPuoQxp-mZ7QTvgPS31Mjw_HKJmZysz';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-function getDeviceId() {
-  let id = localStorage.getItem('kt_device_id');
-  if (!id) {
-    id = 'dev_' + Math.random().toString(36).slice(2, 14);
-    localStorage.setItem('kt_device_id', id);
-  }
-  return id;
-}
-const DEVICE_ID = getDeviceId();
-
 // ── STATE ──────────────────────────────────────────────────────────────────
 let questions = [];
 let milestones = [];
@@ -768,7 +758,6 @@ async function loadQuestions() {
   const { data, error } = await db
     .from('questions')
     .select('*')
-    .eq('device_id', DEVICE_ID)
     .order('added', { ascending: true });
 
   if (error) { showToast('Failed to load questions'); return; }
@@ -849,7 +838,7 @@ async function markCorrect(id) {
     reviews: q.reviews,
     mastered: q.mastered,
     next_review: q.nextReview
-  }).eq('id', id).eq('device_id', DEVICE_ID);
+  }).eq('id', id);
 
   if (error) { showToast('Save failed'); return; }
   showToast(toastMsg);
@@ -868,7 +857,7 @@ async function markWrong(id) {
     reviews: 0,
     mastered: false,
     next_review: null
-  }).eq('id', id).eq('device_id', DEVICE_ID);
+  }).eq('id', id);
 
   if (error) { showToast('Save failed'); return; }
   showToast('Back to the top');
@@ -880,7 +869,7 @@ async function deleteQuestion(id) {
   if (!confirm('Remove this question?')) return;
 
   const { error } = await db.from('questions').delete()
-    .eq('id', id).eq('device_id', DEVICE_ID);
+    .eq('id', id);
 
   if (error) { showToast('Delete failed'); return; }
   questions = questions.filter(x => x.id != id);
@@ -989,7 +978,6 @@ async function addQuestion() {
   if (!question || !answer) { showToast('Question and answer required'); return; }
 
   const { data, error } = await db.from('questions').insert({
-    device_id: DEVICE_ID,
     section,
     question,
     answer,
