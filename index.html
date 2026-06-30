@@ -417,12 +417,18 @@
 
   .milestone-item {
     display: flex;
-    align-items: center;
-    gap: 14px;
+    flex-direction: column;
+    gap: 10px;
     padding: 14px 16px;
     background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: var(--radius);
+  }
+
+  .milestone-top {
+    display: flex;
+    align-items: center;
+    gap: 14px;
   }
 
   .milestone-check {
@@ -455,6 +461,47 @@
     color: var(--text3);
     text-decoration: line-through;
   }
+
+  .milestone-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-left: 36px;
+  }
+
+  .milestone-field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .milestone-field-notes { flex: 1; min-width: 180px; }
+
+  .milestone-field-label {
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text3);
+    font-family: 'Arial', sans-serif;
+  }
+
+  .milestone-date-input, .milestone-notes-input {
+    background: var(--navy-mid);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text1);
+    padding: 4px 8px;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.15s;
+    font-family: 'Arial', sans-serif;
+  }
+
+  .milestone-date-input:focus, .milestone-notes-input:focus {
+    border-color: var(--gold-dim);
+  }
+
+  .milestone-notes-input { width: 100%; font-family: 'Georgia', serif; }
 
   .milestone-phase {
     font-size: 10px;
@@ -667,7 +714,8 @@ const DEVICE_ID = getDeviceId();
 
 // ── STATE ──────────────────────────────────────────────────────────────────
 let questions = [];
-let milestones = JSON.parse(localStorage.getItem('kt_milestones') || 'null') || getDefaultMilestones();
+let milestones = (JSON.parse(localStorage.getItem('kt_milestones') || 'null') || getDefaultMilestones())
+  .map(m => ({ targetDate: null, completedDate: null, notes: '', ...m }));
 let kbEntries = JSON.parse(localStorage.getItem('kt_kb') || '[]');
 let currentFilter = 'due';
 
@@ -941,10 +989,26 @@ function renderMilestones() {
         <div style="font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--gold-dim); font-family:Arial,sans-serif; margin-bottom:10px;">${phase}</div>
         ${items.map(m => `
           <div class="milestone-item">
-            <div class="milestone-check ${m.done ? 'done' : ''}" onclick="toggleMilestone(${m.id})">
-              ${m.done ? '✓' : ''}
+            <div class="milestone-top">
+              <div class="milestone-check ${m.done ? 'done' : ''}" onclick="toggleMilestone(${m.id})">
+                ${m.done ? '✓' : ''}
+              </div>
+              <div class="milestone-text ${m.done ? 'done' : ''}">${escHtml(m.text)}</div>
             </div>
-            <div class="milestone-text ${m.done ? 'done' : ''}">${escHtml(m.text)}</div>
+            <div class="milestone-meta">
+              <label class="milestone-field">
+                <span class="milestone-field-label">Target Date</span>
+                <input type="date" class="milestone-date-input" value="${m.targetDate || ''}" onchange="updateMilestoneTarget(${m.id}, this.value)">
+              </label>
+              <label class="milestone-field" style="${m.done ? '' : 'opacity:0.3; pointer-events:none;'}">
+                <span class="milestone-field-label">Completed</span>
+                <input type="date" class="milestone-date-input" value="${m.completedDate || ''}" onchange="updateMilestoneCompleted(${m.id}, this.value)" ${m.done ? '' : 'tabindex="-1"'}>
+              </label>
+              <label class="milestone-field milestone-field-notes">
+                <span class="milestone-field-label">Notes</span>
+                <input type="text" class="milestone-notes-input" value="${escHtml(m.notes || '')}" placeholder="Add a note…" onchange="updateMilestoneNotes(${m.id}, this.value)">
+              </label>
+            </div>
           </div>
         `).join('')}
       </div>`;
@@ -953,7 +1017,30 @@ function renderMilestones() {
 
 function toggleMilestone(id) {
   const m = milestones.find(x => x.id === id);
-  if (m) { m.done = !m.done; saveMeta(); renderMilestones(); }
+  if (!m) return;
+  m.done = !m.done;
+  if (m.done && !m.completedDate) {
+    m.completedDate = new Date().toISOString().slice(0, 10);
+  } else if (!m.done) {
+    m.completedDate = null;
+  }
+  saveMeta();
+  renderMilestones();
+}
+
+function updateMilestoneTarget(id, value) {
+  const m = milestones.find(x => x.id === id);
+  if (m) { m.targetDate = value || null; saveMeta(); }
+}
+
+function updateMilestoneCompleted(id, value) {
+  const m = milestones.find(x => x.id === id);
+  if (m) { m.completedDate = value || null; saveMeta(); }
+}
+
+function updateMilestoneNotes(id, value) {
+  const m = milestones.find(x => x.id === id);
+  if (m) { m.notes = value; saveMeta(); }
 }
 
 // ── KNOWLEDGE BASE ────────────────────────────────────────────────────────
