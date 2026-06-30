@@ -1012,52 +1012,90 @@ function setFilter(f, btn) {
 
 // ── MILESTONES ────────────────────────────────────────────────────────────
 function renderMilestones() {
-  const list = document.getElementById('milestone-list');
+  var list = document.getElementById('milestone-list');
   if (!milestones.length) {
-    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⏳</div><p>Loading milestones…</p></div>';
+    list.innerHTML = '<p style="color:#a89f8a;padding:20px;font-size:14px;">Loading milestones…</p>';
     return;
   }
 
-  const S = {
-    card: 'background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:14px 16px;margin-bottom:8px;',
-    top: 'display:flex;align-items:center;gap:14px;margin-bottom:12px;',
-    meta: 'display:flex;flex-wrap:wrap;gap:12px;padding-left:36px;padding-top:10px;border-top:1px solid var(--border);',
-    field: 'display:flex;flex-direction:column;gap:4px;',
-    label: 'font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#6b6455;font-family:Arial,sans-serif;display:block;',
-    input: 'background:#0a1628;border:1px solid #6b6455;border-radius:4px;color:#f0e9d6;padding:5px 10px;font-size:13px;outline:none;color-scheme:dark;',
-    notesWrap: 'display:flex;flex-direction:column;gap:4px;flex:1;min-width:200px;',
-  };
+  var phases = [];
+  milestones.forEach(function(m) { if (phases.indexOf(m.phase) === -1) phases.push(m.phase); });
 
-  const phases = [...new Set(milestones.map(m => m.phase))];
-  list.innerHTML = phases.map(phase => {
-    const items = milestones.filter(m => m.phase === phase);
-    return `
-      <div style="margin-bottom:20px;">
-        <div style="font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-dim);font-family:Arial,sans-serif;margin-bottom:10px;">${phase}</div>
-        ${items.map(m => `
-          <div style="${S.card}">
-            <div style="${S.top}">
-              <div class="milestone-check ${m.done ? 'done' : ''}" onclick="toggleMilestone(${m.id})">${m.done ? '✓' : ''}</div>
-              <div class="${m.done ? 'milestone-text done' : 'milestone-text'}">${escHtml(m.text)}</div>
-            </div>
-            <div style="${S.meta}">
-              <div style="${S.field}">
-                <span style="${S.label}">Target Date</span>
-                <input type="date" style="${S.input}min-width:140px;" value="${m.targetDate || ''}" onchange="updateMilestoneTarget(${m.id}, this.value)">
-              </div>
-              <div style="${S.field}">
-                <span style="${S.label}">Completed</span>
-                <input type="date" style="${S.input}min-width:140px;${m.done ? '' : 'opacity:0.4;'}" value="${m.completedDate || ''}" onchange="updateMilestoneCompleted(${m.id}, this.value)">
-              </div>
-              <div style="${S.notesWrap}">
-                <span style="${S.label}">Notes</span>
-                <input type="text" style="${S.input}width:100%;font-family:Georgia,serif;" value="${escHtml(m.notes || '')}" placeholder="Add a note…" onchange="updateMilestoneNotes(${m.id}, this.value)">
-              </div>
-            </div>
-          </div>
-        `).join('')}
-      </div>`;
-  }).join('');
+  var html = '';
+
+  phases.forEach(function(phase) {
+    html += '<div style="margin-bottom:28px;">';
+    html += '<div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#a07d15;font-family:Arial,sans-serif;margin-bottom:12px;">' + phase + '</div>';
+
+    milestones.filter(function(m) { return m.phase === phase; }).forEach(function(m) {
+      var chkBg     = m.done ? '#c9a227' : '#0a1628';
+      var chkBorder = m.done ? '#c9a227' : '#4a5568';
+      var chkColor  = m.done ? '#0a1628' : 'transparent';
+      var txtColor  = m.done ? '#6b6455' : '#f0e9d6';
+      var txtDecor  = m.done ? 'line-through' : 'none';
+      var compOp    = m.done ? '1' : '0.45';
+
+      // card
+      html += '<div style="background:#162847;border:1px solid #2d3748;border-radius:6px;padding:16px 18px;margin-bottom:10px;">';
+
+      // row 1: checkbox + text
+      html += '<div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:16px;">';
+      html += '<div onclick="toggleMilestone(' + m.id + ')" style="'
+            + 'width:22px;height:22px;min-width:22px;border-radius:50%;'
+            + 'border:2px solid ' + chkBorder + ';'
+            + 'background:' + chkBg + ';'
+            + 'color:' + chkColor + ';'
+            + 'display:flex;align-items:center;justify-content:center;'
+            + 'font-size:12px;cursor:pointer;margin-top:1px;">'
+            + (m.done ? '✓' : '') + '</div>';
+      html += '<div style="font-size:14px;color:' + txtColor + ';text-decoration:' + txtDecor + ';line-height:1.5;flex:1;">' + escHtml(m.text) + '</div>';
+      html += '</div>';
+
+      // row 2: three input fields
+      html += '<div style="display:flex;flex-wrap:wrap;gap:16px;padding-left:36px;">';
+
+      // Target Date
+      html += '<div style="display:flex;flex-direction:column;gap:5px;">';
+      html += '<label style="display:block;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#a89f8a;font-family:Arial,sans-serif;">Target Date</label>';
+      html += '<input type="date"'
+            + ' value="' + (m.targetDate || '') + '"'
+            + ' onchange="updateMilestoneTarget(' + m.id + ', this.value)"'
+            + ' style="display:block;background:#0f1e38;border:1px solid #718096;border-radius:4px;'
+            + 'color:#f0e9d6;padding:6px 10px;font-size:13px;font-family:Arial,sans-serif;'
+            + 'min-width:155px;color-scheme:dark;box-sizing:border-box;">';
+      html += '</div>';
+
+      // Completed Date
+      html += '<div style="display:flex;flex-direction:column;gap:5px;">';
+      html += '<label style="display:block;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#a89f8a;font-family:Arial,sans-serif;">Completed</label>';
+      html += '<input type="date"'
+            + ' value="' + (m.completedDate || '') + '"'
+            + ' onchange="updateMilestoneCompleted(' + m.id + ', this.value)"'
+            + ' style="display:block;background:#0f1e38;border:1px solid #718096;border-radius:4px;'
+            + 'color:#f0e9d6;padding:6px 10px;font-size:13px;font-family:Arial,sans-serif;'
+            + 'min-width:155px;color-scheme:dark;box-sizing:border-box;opacity:' + compOp + ';">';
+      html += '</div>';
+
+      // Notes
+      html += '<div style="display:flex;flex-direction:column;gap:5px;flex:1;min-width:220px;">';
+      html += '<label style="display:block;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#a89f8a;font-family:Arial,sans-serif;">Notes</label>';
+      html += '<input type="text"'
+            + ' value="' + escHtml(m.notes || '') + '"'
+            + ' placeholder="Add a note…"'
+            + ' onchange="updateMilestoneNotes(' + m.id + ', this.value)"'
+            + ' style="display:block;background:#0f1e38;border:1px solid #718096;border-radius:4px;'
+            + 'color:#f0e9d6;padding:6px 10px;font-size:13px;font-family:Georgia,serif;'
+            + 'width:100%;box-sizing:border-box;">';
+      html += '</div>';
+
+      html += '</div>'; // end fields row
+      html += '</div>'; // end card
+    });
+
+    html += '</div>'; // end phase group
+  });
+
+  list.innerHTML = html;
 }
 
 async function toggleMilestone(id) {
