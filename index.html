@@ -789,16 +789,21 @@ function rowToMilestone(row) {
   };
 }
 
-async function loadMilestones() {
-  document.getElementById('milestone-list').innerHTML =
-    '<div class="empty-state"><div class="empty-state-icon">⏳</div><p>Loading...</p></div>';
+function defaultMilestoneObjects() {
+  return getDefaultMilestones().map(m => ({ ...m, targetDate: null, completedDate: null, notes: '' }));
+}
 
+async function loadMilestones() {
   const { data, error } = await db
     .from('milestones')
     .select('*')
     .order('id', { ascending: true });
 
-  if (error) { showToast('Failed to load milestones'); return; }
+  if (error) {
+    milestones = defaultMilestoneObjects();
+    renderMilestones();
+    return;
+  }
 
   if (!data || data.length === 0) {
     const seeds = getDefaultMilestones().map(m => ({
@@ -806,8 +811,7 @@ async function loadMilestones() {
       done: false, target_date: null, completed_date: null, notes: ''
     }));
     const { data: seeded, error: seedErr } = await db.from('milestones').insert(seeds).select();
-    if (seedErr) { showToast('Failed to initialize milestones'); return; }
-    milestones = (seeded || []).map(rowToMilestone);
+    milestones = seedErr ? defaultMilestoneObjects() : (seeded || []).map(rowToMilestone);
   } else {
     milestones = data.map(rowToMilestone);
   }
@@ -1021,34 +1025,46 @@ function setFilter(f, btn) {
 // ── MILESTONES ────────────────────────────────────────────────────────────
 function renderMilestones() {
   const list = document.getElementById('milestone-list');
-  const phases = [...new Set(milestones.map(m => m.phase))];
+  if (!milestones.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⏳</div><p>Loading milestones…</p></div>';
+    return;
+  }
 
+  const S = {
+    card: 'background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:14px 16px;margin-bottom:8px;',
+    top: 'display:flex;align-items:center;gap:14px;margin-bottom:12px;',
+    meta: 'display:flex;flex-wrap:wrap;gap:12px;padding-left:36px;padding-top:10px;border-top:1px solid var(--border);',
+    field: 'display:flex;flex-direction:column;gap:4px;',
+    label: 'font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#6b6455;font-family:Arial,sans-serif;display:block;',
+    input: 'background:#0a1628;border:1px solid #6b6455;border-radius:4px;color:#f0e9d6;padding:5px 10px;font-size:13px;outline:none;color-scheme:dark;',
+    notesWrap: 'display:flex;flex-direction:column;gap:4px;flex:1;min-width:200px;',
+  };
+
+  const phases = [...new Set(milestones.map(m => m.phase))];
   list.innerHTML = phases.map(phase => {
     const items = milestones.filter(m => m.phase === phase);
     return `
       <div style="margin-bottom:20px;">
-        <div style="font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--gold-dim); font-family:Arial,sans-serif; margin-bottom:10px;">${phase}</div>
+        <div style="font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-dim);font-family:Arial,sans-serif;margin-bottom:10px;">${phase}</div>
         ${items.map(m => `
-          <div class="milestone-item">
-            <div class="milestone-top">
-              <div class="milestone-check ${m.done ? 'done' : ''}" onclick="toggleMilestone(${m.id})">
-                ${m.done ? '✓' : ''}
-              </div>
-              <div class="milestone-text ${m.done ? 'done' : ''}">${escHtml(m.text)}</div>
+          <div style="${S.card}">
+            <div style="${S.top}">
+              <div class="milestone-check ${m.done ? 'done' : ''}" onclick="toggleMilestone(${m.id})">${m.done ? '✓' : ''}</div>
+              <div class="${m.done ? 'milestone-text done' : 'milestone-text'}">${escHtml(m.text)}</div>
             </div>
-            <div class="milestone-meta">
-              <label class="milestone-field">
-                <span class="milestone-field-label">Target Date</span>
-                <input type="date" class="milestone-date-input" value="${m.targetDate || ''}" onchange="updateMilestoneTarget(${m.id}, this.value)">
-              </label>
-              <label class="milestone-field" style="${m.done ? '' : 'opacity:0.3; pointer-events:none;'}">
-                <span class="milestone-field-label">Completed</span>
-                <input type="date" class="milestone-date-input" value="${m.completedDate || ''}" onchange="updateMilestoneCompleted(${m.id}, this.value)" ${m.done ? '' : 'tabindex="-1"'}>
-              </label>
-              <label class="milestone-field milestone-field-notes">
-                <span class="milestone-field-label">Notes</span>
-                <input type="text" class="milestone-notes-input" value="${escHtml(m.notes || '')}" placeholder="Add a note…" onchange="updateMilestoneNotes(${m.id}, this.value)">
-              </label>
+            <div style="${S.meta}">
+              <div style="${S.field}">
+                <span style="${S.label}">Target Date</span>
+                <input type="date" style="${S.input}min-width:140px;" value="${m.targetDate || ''}" onchange="updateMilestoneTarget(${m.id}, this.value)">
+              </div>
+              <div style="${S.field}">
+                <span style="${S.label}">Completed</span>
+                <input type="date" style="${S.input}min-width:140px;${m.done ? '' : 'opacity:0.4;'}" value="${m.completedDate || ''}" onchange="updateMilestoneCompleted(${m.id}, this.value)">
+              </div>
+              <div style="${S.notesWrap}">
+                <span style="${S.label}">Notes</span>
+                <input type="text" style="${S.input}width:100%;font-family:Georgia,serif;" value="${escHtml(m.notes || '')}" placeholder="Add a note…" onchange="updateMilestoneNotes(${m.id}, this.value)">
+              </div>
             </div>
           </div>
         `).join('')}
