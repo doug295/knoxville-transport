@@ -714,8 +714,7 @@ const DEVICE_ID = getDeviceId();
 
 // ── STATE ──────────────────────────────────────────────────────────────────
 let questions = [];
-let milestones = (JSON.parse(localStorage.getItem('kt_milestones') || 'null') || getDefaultMilestones())
-  .map(m => ({ targetDate: null, completedDate: null, notes: '', ...m }));
+let milestones = [];
 let kbEntries = JSON.parse(localStorage.getItem('kt_kb') || '[]');
 let currentFilter = 'due';
 
@@ -739,7 +738,6 @@ function getDefaultMilestones() {
 }
 
 function saveMeta() {
-  localStorage.setItem('kt_milestones', JSON.stringify(milestones));
   localStorage.setItem('kt_kb', JSON.stringify(kbEntries));
 }
 
@@ -772,6 +770,44 @@ async function loadQuestions() {
   questions = (data || []).map(rowToQ);
   renderStats();
   renderQueue();
+}
+
+function rowToMilestone(row) {
+  return {
+    id: row.id,
+    text: row.text,
+    phase: row.phase,
+    done: row.done || false,
+    targetDate: row.target_date || null,
+    completedDate: row.completed_date || null,
+    notes: row.notes || ''
+  };
+}
+
+async function loadMilestones() {
+  document.getElementById('milestone-list').innerHTML =
+    '<div class="empty-state"><div class="empty-state-icon">⏳</div><p>Loading...</p></div>';
+
+  const { data, error } = await db
+    .from('milestones')
+    .select('*')
+    .order('id', { ascending: true });
+
+  if (error) { showToast('Failed to load milestones'); return; }
+
+  if (!data || data.length === 0) {
+    const seeds = getDefaultMilestones().map(m => ({
+      id: m.id, text: m.text, phase: m.phase,
+      done: false, target_date: null, completed_date: null, notes: ''
+    }));
+    const { data: seeded, error: seedErr } = await db.from('milestones').insert(seeds).select();
+    if (seedErr) { showToast('Failed to initialize milestones'); return; }
+    milestones = (seeded || []).map(rowToMilestone);
+  } else {
+    milestones = data.map(rowToMilestone);
+  }
+
+  renderMilestones();
 }
 
 // ── SPACED REPETITION ─────────────────────────────────────────────────────
@@ -1015,7 +1051,7 @@ function renderMilestones() {
   }).join('');
 }
 
-function toggleMilestone(id) {
+async function toggleMilestone(id) {
   const m = milestones.find(x => x.id === id);
   if (!m) return;
   m.done = !m.done;
@@ -1024,23 +1060,36 @@ function toggleMilestone(id) {
   } else if (!m.done) {
     m.completedDate = null;
   }
-  saveMeta();
+  const { error } = await db.from('milestones').update({
+    done: m.done,
+    completed_date: m.completedDate
+  }).eq('id', id);
+  if (error) { showToast('Save failed'); return; }
   renderMilestones();
 }
 
-function updateMilestoneTarget(id, value) {
+async function updateMilestoneTarget(id, value) {
   const m = milestones.find(x => x.id === id);
-  if (m) { m.targetDate = value || null; saveMeta(); }
+  if (!m) return;
+  m.targetDate = value || null;
+  const { error } = await db.from('milestones').update({ target_date: m.targetDate }).eq('id', id);
+  if (error) showToast('Save failed');
 }
 
-function updateMilestoneCompleted(id, value) {
+async function updateMilestoneCompleted(id, value) {
   const m = milestones.find(x => x.id === id);
-  if (m) { m.completedDate = value || null; saveMeta(); }
+  if (!m) return;
+  m.completedDate = value || null;
+  const { error } = await db.from('milestones').update({ completed_date: m.completedDate }).eq('id', id);
+  if (error) showToast('Save failed');
 }
 
-function updateMilestoneNotes(id, value) {
+async function updateMilestoneNotes(id, value) {
   const m = milestones.find(x => x.id === id);
-  if (m) { m.notes = value; saveMeta(); }
+  if (!m) return;
+  m.notes = value;
+  const { error } = await db.from('milestones').update({ notes: value }).eq('id', id);
+  if (error) showToast('Save failed');
 }
 
 // ── KNOWLEDGE BASE ────────────────────────────────────────────────────────
@@ -1120,9 +1169,8 @@ function showToast(msg) {
 
 // ── INIT ──────────────────────────────────────────────────────────────────
 async function init() {
-  renderMilestones();
   renderKB();
-  await loadQuestions();
+  await Promise.all([loadQuestions(), loadMilestones()]);
 }
 init();
 </script>
