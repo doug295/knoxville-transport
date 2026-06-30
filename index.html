@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Knoxville Transport</title>
+<style>
+  :root {
+    --navy: #0a1628;
+    --navy-mid: #132040;
+    --navy-light: #1e3260;
+    --gold: #c9a227;
+    --gold-light: #e6b93a;
+    --gold-dim: #a07d15;
+    --gold-muted: #3a2e0a;
+    --text1: #f0e9d6;
+    --text2: #a89f8a;
+    --text3: #6b6455;
+    --surface: #0f1e38;
+    --surface2: #162847;
+    --border: #1e3260;
+    --success: #2e7d4f;
+    --success-light: #3dab6a;
+    --danger: #8b2020;
+    --danger-light: #c0392b;
+    --radius: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--navy);
+    color: var(--text1);
+    font-family: 'Georgia', serif;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--navy-mid);
+    border-bottom: 2px solid var(--gold);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .logo-kt {
+    font-size: 22px;
+    font-weight: bold;
+    color: var(--gold);
+    letter-spacing: 2px;
+    font-family: 'Georgia', serif;
+  }
+
+  .logo-sub {
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-family: 'Arial', sans-serif;
+  }
+
+  .phase-badge {
+    background: var(--gold-muted);
+    border: 1px solid var(--gold-dim);
+    color: var(--gold);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-family: 'Arial', sans-serif;
+  }
+
+  /* NAV */
+  nav {
+    background: var(--navy-mid);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    padding: 0 24px;
+    gap: 4px;
+  }
+
+  .nav-btn {
+    background: none;
+    border: none;
+    color: var(--text2);
+    padding: 12px 18px;
+    cursor: pointer;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-family: 'Arial', sans-serif;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .nav-btn:hover { color: var(--text1); }
+
+  .nav-btn.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+  }
+
+  /* MAIN */
+  main {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  .card-title {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-family: 'Arial', sans-serif;
+    margin-bottom: 16px;
+  }
+
+  /* STATS ROW */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    text-align: center;
+  }
+
+  .stat-num {
+    font-size: 32px;
+    color: var(--gold);
+    font-family: 'Georgia', serif;
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-family: 'Arial', sans-serif;
+    margin-top: 6px;
+  }
+
+  /* QUEUE ITEM */
+  .queue-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 12px;
+    border-left: 3px solid var(--gold-dim);
+  }
+
+  .queue-item.due {
+    border-left-color: var(--gold);
+  }
+
+  .queue-section-tag {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    font-family: 'Arial', sans-serif;
+    margin-bottom: 8px;
+  }
+
+  .queue-question {
+    font-size: 15px;
+    color: var(--text1);
+    line-height: 1.5;
+    margin-bottom: 10px;
+  }
+
+  .queue-answer {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.5;
+    padding: 10px 14px;
+    background: var(--navy-mid);
+    border-radius: 4px;
+    margin-bottom: 12px;
+    display: none;
+  }
+
+  .queue-answer.visible { display: block; }
+
+  .queue-note {
+    font-size: 12px;
+    color: var(--text3);
+    font-style: italic;
+    margin-bottom: 12px;
+    display: none;
+  }
+
+  .queue-note.visible { display: block; }
+
+  .queue-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .btn {
+    padding: 8px 18px;
+    border-radius: var(--radius);
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-family: 'Arial', sans-serif;
+    transition: opacity 0.15s;
+  }
+
+  .btn:hover { opacity: 0.85; }
+
+  .btn-gold {
+    background: var(--gold);
+    color: var(--navy);
+    font-weight: bold;
+  }
+
+  .btn-outline {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text2);
+  }
+
+  .btn-outline:hover { border-color: var(--text2); color: var(--text1); }
+
+  .btn-success {
+    background: var(--success);
+    color: #fff;
+  }
+
+  .btn-danger {
+    background: var(--danger);
+    color: #fff;
+  }
+
+  .btn-sm {
+    padding: 5px 12px;
+    font-size: 11px;
+  }
+
+  .review-count {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: 'Arial', sans-serif;
+    margin-left: auto;
+  }
+
+  /* ADD FORM */
+  .add-form {
+    display: none;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .add-form.open { display: flex; }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    font-family: 'Arial', sans-serif;
+  }
+
+  .form-input, .form-select, .form-textarea {
+    background: var(--navy-mid);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text1);
+    padding: 10px 14px;
+    font-size: 14px;
+    font-family: 'Georgia', serif;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--gold-dim);
+  }
+
+  .form-select option { background: var(--navy-mid); }
+
+  .form-textarea { resize: vertical; min-height: 80px; }
+
+  /* FILTER ROW */
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--text2);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-family: 'Arial', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .filter-btn:hover { border-color: var(--text2); color: var(--text1); }
+  .filter-btn.active { border-color: var(--gold); color: var(--gold); background: var(--gold-muted); }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text3);
+  }
+
+  .empty-state-icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+  }
+
+  .empty-state p {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* PROGRESS BAR */
+  .progress-bar-wrap {
+    background: var(--navy-mid);
+    border-radius: 4px;
+    height: 6px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--gold);
+    border-radius: 4px;
+    transition: width 0.4s ease;
+  }
+
+  /* SECTION PROGRESS */
+  .section-progress {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .section-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+  }
+
+  .section-name {
+    font-size: 12px;
+    color: var(--text1);
+    margin-bottom: 4px;
+    font-family: 'Arial', sans-serif;
+  }
+
+  .section-meta {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: 'Arial', sans-serif;
+  }
+
+  /* DIVIDER */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 20px 0;
+  }
+
+  /* MILESTONE */
+  .milestone-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .milestone-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  .milestone-check {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .milestone-check.done {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: var(--navy);
+  }
+
+  .milestone-text {
+    font-size: 14px;
+    color: var(--text1);
+    flex: 1;
+  }
+
+  .milestone-text.done {
+    color: var(--text3);
+    text-decoration: line-through;
+  }
+
+  .milestone-phase {
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text3);
+    font-family: 'Arial', sans-serif;
+  }
+
+  /* TAB CONTENT */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--navy-mid);
+    border: 1px solid var(--gold-dim);
+    color: var(--text1);
+    padding: 12px 20px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-family: 'Arial', sans-serif;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 999;
+    pointer-events: none;
+  }
+
+  .toast.show { opacity: 1; }
+
+  @media (max-width: 600px) {
+    .stats-row { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .stat-num { font-size: 24px; }
+    .section-progress { grid-template-columns: 1fr; }
+    nav { overflow-x: auto; }
+    .nav-btn { padding: 12px 12px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-kt">KT</span>
+    <span class="logo-sub">Knoxville Transport</span>
+  </div>
+  <span class="phase-badge" id="phase-badge">Phase 0 — CDL</span>
+</header>
+
+<nav>
+  <button class="nav-btn active" onclick="switchTab('study')">Study</button>
+  <button class="nav-btn" onclick="switchTab('milestones')">Milestones</button>
+  <button class="nav-btn" onclick="switchTab('knowledge')">Knowledge</button>
+</nav>
+
+<main>
+
+  <!-- STUDY TAB -->
+  <div class="tab-content active" id="tab-study">
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-due">0</div>
+        <div class="stat-label">Due Today</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-queue">0</div>
+        <div class="stat-label">In Queue</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-mastered">0</div>
+        <div class="stat-label">Mastered</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+        <div class="card-title" style="margin-bottom:0;">Wrong Answer Queue</div>
+        <button class="btn btn-gold btn-sm" onclick="toggleAddForm()">+ Add Question</button>
+      </div>
+
+      <div class="add-form" id="add-form">
+        <div class="form-group">
+          <label class="form-label">Section</label>
+          <select class="form-select" id="input-section">
+            <option value="General Knowledge">General Knowledge</option>
+            <option value="Air Brakes">Air Brakes</option>
+            <option value="Combination Vehicles">Combination Vehicles</option>
+            <option value="Hazmat">Hazmat</option>
+            <option value="Pre-Trip Inspection">Pre-Trip Inspection</option>
+            <option value="Hours of Service">Hours of Service</option>
+            <option value="DOT Compliance">DOT Compliance</option>
+            <option value="Real World">Real World</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Question</label>
+          <textarea class="form-textarea" id="input-question" placeholder="What tripped you up?"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Correct Answer</label>
+          <textarea class="form-textarea" id="input-answer" placeholder="The right answer..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Why it tripped you up (optional)</label>
+          <textarea class="form-textarea" id="input-note" placeholder="What confused you about it?"></textarea>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button class="btn btn-gold" onclick="addQuestion()">Save Question</button>
+          <button class="btn btn-outline" onclick="toggleAddForm()">Cancel</button>
+        </div>
+        <hr class="divider">
+      </div>
+
+      <div class="filter-row">
+        <button class="filter-btn active" onclick="setFilter('due', this)">Due Now</button>
+        <button class="filter-btn" onclick="setFilter('all', this)">All</button>
+        <button class="filter-btn" onclick="setFilter('mastered', this)">Mastered</button>
+      </div>
+
+      <div id="queue-list"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Progress by Section</div>
+      <div class="section-progress" id="section-progress"></div>
+    </div>
+
+  </div>
+
+  <!-- MILESTONES TAB -->
+  <div class="tab-content" id="tab-milestones">
+    <div class="card">
+      <div class="card-title">Build Milestones</div>
+      <div class="milestone-list" id="milestone-list"></div>
+    </div>
+  </div>
+
+  <!-- KNOWLEDGE TAB -->
+  <div class="tab-content" id="tab-knowledge">
+    <div class="card">
+      <div class="card-title">Knowledge Base</div>
+      <div style="color:var(--text3); font-size:14px; line-height:1.7;">
+        This section grows as you learn things worth remembering — real world trucking knowledge, not just test answers. SOPs, maintenance notes, DOT rules, customer lessons, equipment specs. One entry at a time.
+      </div>
+      <hr class="divider">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+        <span style="font-size:13px; color:var(--text2);">Entries</span>
+        <button class="btn btn-gold btn-sm" onclick="toggleKBForm()">+ Add Entry</button>
+      </div>
+
+      <div class="add-form" id="kb-form">
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select class="form-select" id="kb-category">
+            <option>DOT Compliance</option>
+            <option>Maintenance</option>
+            <option>Hours of Service</option>
+            <option>Load Planning</option>
+            <option>Customers</option>
+            <option>Equipment</option>
+            <option>Finance</option>
+            <option>Dispatch</option>
+            <option>Safety</option>
+            <option>General</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Title</label>
+          <input class="form-input" id="kb-title" placeholder="Short title for this entry" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes</label>
+          <textarea class="form-textarea" id="kb-notes" style="min-height:120px;" placeholder="What did you learn? Be specific."></textarea>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button class="btn btn-gold" onclick="addKBEntry()">Save Entry</button>
+          <button class="btn btn-outline" onclick="toggleKBForm()">Cancel</button>
+        </div>
+        <hr class="divider">
+      </div>
+
+      <div id="kb-list"></div>
+    </div>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────
+let questions = JSON.parse(localStorage.getItem('kt_questions') || '[]');
+let milestones = JSON.parse(localStorage.getItem('kt_milestones') || 'null') || getDefaultMilestones();
+let kbEntries = JSON.parse(localStorage.getItem('kt_kb') || '[]');
+let currentFilter = 'due';
+
+function getDefaultMilestones() {
+  return [
+    { id: 1, text: 'Pass General Knowledge practice tests 90%+ (3 consecutive)', phase: 'CDL', done: false },
+    { id: 2, text: 'Pass Air Brakes section 90%+', phase: 'CDL', done: false },
+    { id: 3, text: 'Pass Combination Vehicles section 90%+', phase: 'CDL', done: false },
+    { id: 4, text: 'Schedule CDL permit test', phase: 'CDL', done: false },
+    { id: 5, text: 'Obtain CDL learner\'s permit', phase: 'CDL', done: false },
+    { id: 6, text: 'Begin CDL-A training program', phase: 'Training', done: false },
+    { id: 7, text: 'Complete CDL-A training', phase: 'Training', done: false },
+    { id: 8, text: 'Pass CDL-A road test', phase: 'Training', done: false },
+    { id: 9, text: 'CDL-A in hand', phase: 'Training', done: false },
+    { id: 10, text: 'Register knoxvilletransport.com', phase: 'Launch', done: false },
+    { id: 11, text: 'File Knoxville Transport LLC', phase: 'Launch', done: false },
+    { id: 12, text: 'Contact warm leads (road construction, excavation, grain)', phase: 'Launch', done: false },
+    { id: 13, text: 'First load hauled', phase: 'Launch', done: false },
+    { id: 14, text: 'Acquire first truck and trailer', phase: 'Equipment', done: false },
+  ];
+}
+
+function save() {
+  localStorage.setItem('kt_questions', JSON.stringify(questions));
+  localStorage.setItem('kt_milestones', JSON.stringify(milestones));
+  localStorage.setItem('kt_kb', JSON.stringify(kbEntries));
+}
+
+// ── SPACED REPETITION ─────────────────────────────────────────────────────
+// Reviews: 0 = new, 1 = seen once (next day), 2 = twice (3 days), 3+ = mastered (7 days)
+const INTERVALS = [0, 1, 3, 7]; // days until next review
+
+function isDue(q) {
+  if (q.mastered) return false;
+  if (!q.nextReview) return true;
+  return new Date() >= new Date(q.nextReview);
+}
+
+function markCorrect(id) {
+  const q = questions.find(x => x.id === id);
+  if (!q) return;
+  q.reviews = (q.reviews || 0) + 1;
+  if (q.reviews >= 3) {
+    q.mastered = true;
+    q.nextReview = null;
+    showToast('Mastered');
+  } else {
+    const days = INTERVALS[Math.min(q.reviews, INTERVALS.length - 1)];
+    const next = new Date();
+    next.setDate(next.getDate() + days);
+    q.nextReview = next.toISOString();
+    showToast(`Good — review again in ${days} day${days !== 1 ? 's' : ''}`);
+  }
+  save();
+  renderQueue();
+  renderStats();
+}
+
+function markWrong(id) {
+  const q = questions.find(x => x.id === id);
+  if (!q) return;
+  q.reviews = 0;
+  q.mastered = false;
+  q.nextReview = null;
+  showToast('Back to the top');
+  save();
+  renderQueue();
+  renderStats();
+}
+
+function deleteQuestion(id) {
+  if (!confirm('Remove this question?')) return;
+  questions = questions.filter(x => x.id !== id);
+  save();
+  renderQueue();
+  renderStats();
+  renderSectionProgress();
+}
+
+// ── RENDER QUEUE ──────────────────────────────────────────────────────────
+function renderQueue() {
+  const list = document.getElementById('queue-list');
+  let filtered = questions;
+
+  if (currentFilter === 'due') filtered = questions.filter(q => isDue(q));
+  else if (currentFilter === 'mastered') filtered = questions.filter(q => q.mastered);
+  // 'all' = everything
+
+  if (filtered.length === 0) {
+    const msgs = {
+      due: { icon: '✓', text: 'Nothing due right now. Add a wrong answer or check back later.' },
+      all: { icon: '📋', text: 'No questions yet. Add your first wrong answer above.' },
+      mastered: { icon: '⭐', text: 'Nothing mastered yet. Keep reviewing.' }
+    };
+    const m = msgs[currentFilter];
+    list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">${m.icon}</div><p>${m.text}</p></div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(q => {
+    const due = isDue(q);
+    return `
+    <div class="queue-item ${due ? 'due' : ''}" id="qi-${q.id}">
+      <div class="queue-section-tag">${q.section}</div>
+      <div class="queue-question">${escHtml(q.question)}</div>
+      <div class="queue-answer" id="ans-${q.id}">${escHtml(q.answer)}</div>
+      ${q.note ? `<div class="queue-note" id="note-${q.id}">${escHtml(q.note)}</div>` : ''}
+      <div class="queue-actions">
+        <button class="btn btn-outline btn-sm" onclick="toggleAnswer(${q.id})">Show Answer</button>
+        <button class="btn btn-success btn-sm" onclick="markCorrect(${q.id})">Got It</button>
+        <button class="btn btn-danger btn-sm" onclick="markWrong(${q.id})">Missed It</button>
+        <span class="review-count">${q.reviews || 0} of 3</span>
+        <button class="btn btn-outline btn-sm" style="margin-left:auto;" onclick="deleteQuestion(${q.id})">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  renderSectionProgress();
+}
+
+function toggleAnswer(id) {
+  const ans = document.getElementById(`ans-${id}`);
+  const note = document.getElementById(`note-${id}`);
+  const isVisible = ans.classList.contains('visible');
+  ans.classList.toggle('visible', !isVisible);
+  if (note) note.classList.toggle('visible', !isVisible);
+  // update button text
+  const btn = ans.closest('.queue-item').querySelector('.btn-outline');
+  btn.textContent = isVisible ? 'Show Answer' : 'Hide Answer';
+}
+
+// ── STATS ─────────────────────────────────────────────────────────────────
+function renderStats() {
+  document.getElementById('stat-due').textContent = questions.filter(isDue).length;
+  document.getElementById('stat-queue').textContent = questions.filter(q => !q.mastered).length;
+  document.getElementById('stat-mastered').textContent = questions.filter(q => q.mastered).length;
+}
+
+// ── SECTION PROGRESS ──────────────────────────────────────────────────────
+function renderSectionProgress() {
+  const sections = {};
+  questions.forEach(q => {
+    if (!sections[q.section]) sections[q.section] = { total: 0, mastered: 0 };
+    sections[q.section].total++;
+    if (q.mastered) sections[q.section].mastered++;
+  });
+
+  const el = document.getElementById('section-progress');
+  const entries = Object.entries(sections);
+  if (entries.length === 0) {
+    el.innerHTML = `<div style="color:var(--text3); font-size:13px; grid-column:1/-1;">No questions logged yet.</div>`;
+    return;
+  }
+
+  el.innerHTML = entries.map(([sec, data]) => {
+    const pct = data.total ? Math.round((data.mastered / data.total) * 100) : 0;
+    return `
+    <div class="section-item">
+      <div class="section-name">${sec}</div>
+      <div class="section-meta">${data.mastered} / ${data.total} mastered</div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" style="width:${pct}%"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── ADD QUESTION ──────────────────────────────────────────────────────────
+function toggleAddForm() {
+  const form = document.getElementById('add-form');
+  form.classList.toggle('open');
+}
+
+function addQuestion() {
+  const section = document.getElementById('input-section').value.trim();
+  const question = document.getElementById('input-question').value.trim();
+  const answer = document.getElementById('input-answer').value.trim();
+  const note = document.getElementById('input-note').value.trim();
+
+  if (!question || !answer) { showToast('Question and answer required'); return; }
+
+  questions.push({
+    id: Date.now(),
+    section,
+    question,
+    answer,
+    note,
+    reviews: 0,
+    mastered: false,
+    nextReview: null,
+    added: new Date().toISOString()
+  });
+
+  document.getElementById('input-question').value = '';
+  document.getElementById('input-answer').value = '';
+  document.getElementById('input-note').value = '';
+  document.getElementById('add-form').classList.remove('open');
+
+  save();
+  renderQueue();
+  renderStats();
+  renderSectionProgress();
+  showToast('Question added');
+}
+
+// ── FILTER ────────────────────────────────────────────────────────────────
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderQueue();
+}
+
+// ── MILESTONES ────────────────────────────────────────────────────────────
+function renderMilestones() {
+  const list = document.getElementById('milestone-list');
+  const phases = [...new Set(milestones.map(m => m.phase))];
+
+  list.innerHTML = phases.map(phase => {
+    const items = milestones.filter(m => m.phase === phase);
+    return `
+      <div style="margin-bottom:20px;">
+        <div style="font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--gold-dim); font-family:Arial,sans-serif; margin-bottom:10px;">${phase}</div>
+        ${items.map(m => `
+          <div class="milestone-item">
+            <div class="milestone-check ${m.done ? 'done' : ''}" onclick="toggleMilestone(${m.id})">
+              ${m.done ? '✓' : ''}
+            </div>
+            <div class="milestone-text ${m.done ? 'done' : ''}">${escHtml(m.text)}</div>
+          </div>
+        `).join('')}
+      </div>`;
+  }).join('');
+}
+
+function toggleMilestone(id) {
+  const m = milestones.find(x => x.id === id);
+  if (m) { m.done = !m.done; save(); renderMilestones(); }
+}
+
+// ── KNOWLEDGE BASE ────────────────────────────────────────────────────────
+function toggleKBForm() {
+  document.getElementById('kb-form').classList.toggle('open');
+}
+
+function addKBEntry() {
+  const category = document.getElementById('kb-category').value;
+  const title = document.getElementById('kb-title').value.trim();
+  const notes = document.getElementById('kb-notes').value.trim();
+
+  if (!title || !notes) { showToast('Title and notes required'); return; }
+
+  kbEntries.unshift({
+    id: Date.now(),
+    category,
+    title,
+    notes,
+    added: new Date().toISOString()
+  });
+
+  document.getElementById('kb-title').value = '';
+  document.getElementById('kb-notes').value = '';
+  document.getElementById('kb-form').classList.remove('open');
+
+  save();
+  renderKB();
+  showToast('Entry saved');
+}
+
+function renderKB() {
+  const list = document.getElementById('kb-list');
+  if (kbEntries.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📖</div><p>Your knowledge base is empty. Add the first thing you learn that's worth remembering.</p></div>`;
+    return;
+  }
+
+  list.innerHTML = kbEntries.map(e => `
+    <div class="queue-item">
+      <div class="queue-section-tag">${e.category} · ${new Date(e.added).toLocaleDateString()}</div>
+      <div class="queue-question" style="font-size:14px; font-weight:bold;">${escHtml(e.title)}</div>
+      <div class="queue-answer visible" style="display:block;">${escHtml(e.notes)}</div>
+      <div class="queue-actions">
+        <button class="btn btn-outline btn-sm" style="margin-left:auto;" onclick="deleteKB(${e.id})">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function deleteKB(id) {
+  if (!confirm('Remove this entry?')) return;
+  kbEntries = kbEntries.filter(e => e.id !== id);
+  save();
+  renderKB();
+}
+
+// ── TAB SWITCHING ─────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────
+function escHtml(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+renderStats();
+renderQueue();
+renderMilestones();
+renderKB();
+</script>
+</body>
+</html>
